@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nowty Pasiya Aviator Signal Tool</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+  body, html { width: 100%; height: 100%; overflow: hidden; }
+  .hidden { display: none; }
+
+  /* Login page */
+  #loginPage {
+    position: relative;
+    width: 100%; height: 100%;
+    color: #fff;
+    display: flex; justify-content: center; align-items: center;
+    flex-direction: column;
+  }
+  #loginPage video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0.7; }
+  #loginBox { background: rgba(0,0,0,0.6); padding: 40px; border-radius: 10px; text-align: center; }
+  #loginBox input { width: 200px; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
+  #loginBox button { padding: 10px 20px; border: none; border-radius: 5px; background: #ffcc00; color: #000; cursor: pointer; }
+
+  /* Main app page */
+  #appPage {
+    position: relative; width: 100%; height: 100%; background: #111; color: #fff; display: flex; flex-direction: column; align-items: center; overflow: hidden;
+  }
+  #appPage video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0.4; }
+  header { margin-top: 20px; font-size: 32px; color: #00eaff; text-align: center; }
+  #datetime { margin-top: 10px; font-size: 18px; }
+  #fileInput { margin-top: 20px; }
+  #startBtn { margin: 10px; padding: 10px 20px; background: #ffcc00; border: none; border-radius: 5px; cursor: pointer; color: #000; font-size: 16px; }
+  #signalContainer { margin-top: 20px; width: 90%; max-width: 500px; overflow-y: auto; flex-grow: 1; }
+  .signal { background: rgba(0,0,0,0.6); margin-bottom: 5px; padding: 10px; border-radius: 5px; display: flex; justify-content: space-between; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<!-- Login Page -->
+<div id="loginPage">
+  <video id="loginVideo" autoplay muted loop>
+    <source src="login-bg.mp4" type="video/mp4">
+  </video>
+  <div id="loginBox">
+    <h2>Login to Nowty Pasiya Aviator Signal Tool</h2>
+    <input type="text" id="username" placeholder="Username"><br>
+    <input type="password" id="password" placeholder="Password"><br>
+    <button onclick="login()">Login</button>
+  </div>
+</div>
+
+<!-- Main App Page -->
+<div id="appPage" class="hidden">
+  <video autoplay muted loop>
+    <source src="app-bg.mp4" type="video/mp4">
+  </video>
+  <header>Nowty Pasiya Aviator Signal Tool</header>
+  <div id="datetime"></div>
+  <input type="file" id="fileInput" accept=".xlsx,.xls"/>
+  <button id="startBtn" onclick="startSimulation()">Start Simulation</button>
+  <div id="signalContainer"></div>
+</div>
+
+<script>
+let data = [];
+let index = 0;
+
+// Login function
+function login(){
+  const user = document.getElementById('username').value;
+  const pass = document.getElementById('password').value;
+  const loginVideo = document.getElementById('loginVideo');
+
+  if(user === 'admin' && pass === '1234'){
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('appPage').classList.remove('hidden');
+  } else {
+    alert('Invalid username or password');
+    // Change to error video with sound
+    loginVideo.src = 'error-bg.mp4'; // වෙනම video
+    loginVideo.muted = false;        // sound on
+    loginVideo.play();
+  }
+}
+
+// Date & Time
+function updateDateTime(){
+  const now = new Date();
+  document.getElementById('datetime').textContent = now.toLocaleString();
+}
+setInterval(updateDateTime, 1000);
+
+// Read Excel
+document.getElementById('fileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const bstr = evt.target.result;
+    const wb = XLSX.read(bstr, {type:'binary'});
+    const wsname = wb.SheetNames[0];
+    const ws = wb.Sheets[wsname];
+    const jsonData = XLSX.utils.sheet_to_json(ws, {header:1});
+    data = jsonData.slice(1).map(row=>({
+      time: row[0],
+      odds: row[1]
+    })).filter(r=> r.odds >= 10);
+    console.log(data);
+  };
+  reader.readAsBinaryString(file);
+});
+
+// Simulation
+function startSimulation(){
+  if(data.length === 0){
+    alert('Please upload Excel file first!');
+    return;
+  }
+  index = 0;
+  document.getElementById('signalContainer').innerHTML = '';
+  simulateNext();
+}
+
+function simulateNext(){
+  if(index >= data.length) return;
+  const container = document.getElementById('signalContainer');
+  const signal = document.createElement('div');
+  signal.className = 'signal';
+  signal.textContent = `${data[index].time} - ${data[index].odds}x`;
+  container.prepend(signal);
+  index++;
+  const delay = Math.random()*2000 + 1000;
+  setTimeout(simulateNext, delay);
+}
+</script>
+
+</body>
+</html>
